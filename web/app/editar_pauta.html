@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Pauta - Legisla Net</title>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/forms.css">
+
+    <style>
+        /* ESTILOS ESPECÍFICOS DO FORMULÁRIO DE EDIÇÃO DE PAUTA */
+        
+        .file-upload-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        
+        .file-display .file-badge {
+            background-color: var(--accent-blue);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .file-display .btn-preview {
+            background-color: var(--hover-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-preview:hover {
+            background-color: #2e343b;
+        }
+
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-input-wrapper .custom-file-upload {
+            background-color: var(--hover-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .custom-file-upload:hover {
+            background-color: #2e343b;
+        }
+
+        .file-name {
+            color: var(--secondary-text);
+            font-size: 0.875rem;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        
+        <div id="sidebar-placeholder"></div>
+
+        <main class="main-content" id="mainContent">
+            
+            <div id="header-placeholder"></div>
+
+            <section class="form-section fade-in">
+                <div class="form-group">
+                    <label for="autorPauta">Autor da pauta</label>
+                    <input type="text" id="autorPauta" value="Ver: Toinho de Quinca" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="nomePauta">Nome</label>
+                    <input type="text" id="nomePauta" value="Denúncia - 2ª votação">
+                </div>
+
+                <div class="form-group">
+                    <label for="statusPauta">Status da Pauta</label>
+                    <select id="statusPauta">
+                        <option value="finalizada" selected>Finalizada</option>
+                        <option value="em_votacao">Em votação</option>
+                        <option value="pendente">Pendente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricaoPauta">Descrição</label>
+                    <textarea id="descricaoPauta">Denúncia com pedido de instauração de Comissão Parlamentar de Inquérito</textarea>
+                </div>
+
+                <div class="file-upload-group">
+                    <label>Arquivo</label>
+                    <div class="file-display">
+                        <span class="file-badge">PDF</span>
+                        <button class="btn-preview"><i class="fa-solid fa-eye"></i> Ver Preview</button>
+                    </div>
+                    <div class="file-input-wrapper">
+                        <label for="file-input" class="custom-file-upload">
+                            Escolher arquivo
+                        </label>
+                        <input type="file" id="file-input">
+                        <span class="file-name">Nenhum arquivo escolhido</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary">Atualizar Pauta</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="../js/global.js"></script>
+    <script src="../js/forms.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Script para input de arquivo
+            initLayout({
+            title: 'Editar Pauta',
+            icon: 'fa-file-lines',
+            navActive: 'nav-cadastro'
+            });
+        });
+    </script>
+
+</body>
+</html>

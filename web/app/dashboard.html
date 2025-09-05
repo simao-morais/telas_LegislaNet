@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Legisla Net</title>
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/pagination.css" />
+    <link rel="stylesheet" href="../css/carregamento.css" />
+
+    <style>
+      /* ESTILOS ESPECÍFICOS E DE ANIMAÇÃO DO DASHBOARD (sem alterações) */
+      .pautas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 24px;
+      }
+      .pauta-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+      }
+      .pauta-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 24px;
+        transition: border-color 0.2s, transform 0.2s;
+      }
+      .pauta-card:hover {
+        border-color: var(--accent-blue);
+        transform: translateY(-4px);
+      }
+    </style>
+
+    <script src="../js/global.js"></script>
+    <script src="../js/pagination.js"></script>
+    <script src="../js/carregamento.js"></script>
+  </head>
+  <body>
+    <div class="app-layout">
+      <div id="sidebar-placeholder"></div>
+
+      <main class="main-content" id="mainContent">
+        <div id="header-placeholder"></div>
+
+        <div class="pautas-grid" id="pautas-grid"></div>
+
+        <div
+          class="pagination-container"
+          id="pagination-container"
+          style="display: none"
+        >
+          <div class="pagination-controls" id="pagination-controls"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        // --- 2. PROTEÇÃO DE PÁGINA APLICADA ---
+        // A função `protectPage()` é chamada primeiro. Se o usuário não estiver
+        // logado, será redirecionado e o restante do script não será executado.
+        try {
+          protectPage();
+        } catch (e) {
+          console.error(e.message);
+          return; // Interrompe a execução se não estiver autenticado.
+        }
+
+        // Se a execução continuar, o usuário está autenticado.
+        console.log(
+          "[DASHBOARD] Autenticação verificada. Inicializando a página."
+        );
+
+        initLayout({
+          title: "Dashboard",
+          icon: "fa-table-columns",
+          navActive: "nav-dashboard",
+        });
+
+        // A função `initStatusDropdowns` deve ser chamada se você tiver dropdowns no dashboard.
+        // initStatusDropdowns();
+
+        // Inicializar o carregamento de pautas.
+        await loadPautas();
+      });
+
+      // ==========================================
+      // SISTEMA DE PAUTAS DINÂMICAS (Refatorado)
+      // ==========================================
+
+      let currentPage = 1;
+      const PAUTAS_PER_PAGE = 8;
+
+      async function loadPautas(page = 1) {
+        const grid = document.getElementById("pautas-grid");
+        const paginationContainer = document.getElementById(
+          "pagination-container"
+        );
+        const authToken = localStorage.getItem("authToken");
+
+        // 1. Inicia o estado de carregamento
+        renderLoadingState(grid, "Carregando pautas...");
+        paginationContainer.style.display = "none";
+
+        try {
+          const response = await fetch(
+            `/api/pautas?page=${page}&limit=${PAUTAS_PER_PAGE}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 401) {
+            localStorage.clear();
+            window.location.href = "/app/login.html";
+            return;
+          }
+
+          if (!response.ok) {
+            // Lança um erro que será pego pelo bloco catch
+            throw new Error(`Falha na comunicação com o servidor.`);
+          }
+
+          const { data: pautas, pagination } = await response.json();
+
+          // 2. A função renderPautas agora decide se mostra os cards ou o estado de "vazio"
+          renderPautas(pautas);
+          renderPagination(pagination);
+        } catch (error) {
+          console.error("Erro ao carregar pautas:", error);
+          // 3. O bloco catch agora apenas chama a função de estado de erro
+          renderErrorState(grid, error.message);
+        }
+      }
+
+      function renderPautas(pautas) {
+        const grid = document.getElementById("pautas-grid");
+
+        // Se não houver pautas, chama a função de estado de "vazio"
+        if (!pautas || pautas.length === 0) {
+          renderEmptyState(
+            grid,
+            "Nenhuma pauta encontrada.",
+            "fa-solid fa-file-lines"
+          );
+          return;
+        }
+
+        // Se houver pautas, limpa o grid e renderiza os cards
+        grid.innerHTML = "";
+        pautas.forEach((pauta) => {
+          const card = createPautaCard(pauta);
+          grid.appendChild(card);
+        });
+      }
+
+      function createPautaCard(pauta) {
+        const link = document.createElement("a");
+        link.href = `painel_votacao.html?id=${pauta.id}`;
+        link.className = "pauta-card-link fade-in";
+        const statusClass = (pauta.status || "")
+          .toLowerCase()
+          .replace(/\s+/g, "-");
+        const dataSessao =
+          pauta.sessao && pauta.sessao.data_sessao
+            ? new Date(pauta.sessao.data_sessao).toLocaleDateString("pt-BR")
+            : "N/A";
+        link.innerHTML = `
+                <div class="pauta-card">
+                    <h3>${escapeHtml(pauta.nome)}</h3>
+                    <p class="description">${escapeHtml(
+                      pauta.descricao || "Sem descrição"
+                    )}</p>
+                    <div class="pauta-info">
+                        <div><span class="label">Autor:</span> ${escapeHtml(
+                          pauta.autor || "N/A"
+                        )}</div>
+                        <div><span class="label">Status:</span> <span class="status-badge ${statusClass}">${
+          pauta.status || "N/A"
+        }</span></div>
+                        <div><span class="label">Data da Sessão:</span> ${dataSessao}</div>
+                    </div>
+                </div>
+            `;
+        return link;
+      }
+
+      function renderPagination(pagination) {
+        const container = document.getElementById("pagination-container");
+        const controls = document.getElementById("pagination-controls");
+        if (!pagination || pagination.totalPages <= 1) {
+          container.style.display = "none";
+          return;
+        }
+        container.style.display = "block";
+        controls.innerHTML = "";
+        // Previous Button
+        const prevBtn = document.createElement("a");
+        prevBtn.href = "#";
+        prevBtn.innerHTML = "&laquo; Anterior";
+        prevBtn.className = pagination.page === 1 ? "disabled" : "";
+        if (pagination.page > 1) {
+          prevBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            loadPautas(pagination.page - 1);
+          });
+        }
+        controls.appendChild(prevBtn);
+        // Page Numbers
+        for (let i = 1; i <= pagination.totalPages; i++) {
+          const pageBtn = document.createElement("a");
+          pageBtn.href = "#";
+          pageBtn.textContent = i;
+          pageBtn.className = i === pagination.page ? "active" : "";
+          if (i !== pagination.page) {
+            pageBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              loadPautas(i);
+            });
+          }
+          controls.appendChild(pageBtn);
+        }
+        // Next Button
+        const nextBtn = document.createElement("a");
+        nextBtn.href = "#";
+        nextBtn.innerHTML = "Próximo &raquo;";
+        nextBtn.className =
+          pagination.page === pagination.totalPages ? "disabled" : "";
+        if (pagination.page < pagination.totalPages) {
+          nextBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            loadPautas(pagination.page + 1);
+          });
+        }
+        controls.appendChild(nextBtn);
+      }
+
+      function escapeHtml(text = "") {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+    </script>
+  </body>
+</html>
